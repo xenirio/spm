@@ -7,6 +7,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace StoreProcudureManager
@@ -177,7 +178,7 @@ namespace StoreProcudureManager
                                             string sql = sr.ReadToEnd();
                                             if (result.ResultType != RESULT_TYPE.NEW)
                                             {
-                                                sql = sql.Replace("CREATE PROCEDURE", "ALTER PROCEDURE");
+                                                sql = Regex.Replace(sql, "CREATE PROCEDURE", "ALTER PROCEDURE", RegexOptions.IgnoreCase);
                                             }
 
                                             try
