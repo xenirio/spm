@@ -1,5 +1,5 @@
 #### Use:
-	spm <DBName> <-p|-i|-v> <packed file>
+	spm <DBName> <-p|-i <mode>|-v|-con> <packed file>
 	
 #### Example:
 	spm MyDB -p webdb.zip
@@ -10,6 +10,6 @@ will save all SPs in MyDB to packed file 'webdb.zip'
 | :--- | :--- |
 | DBName  | name of Database  |
 | -p  | to packed all SPs  |
-| -i  | to install all SPs (replace if exist)  |
-| -si  | to safety install (won't replace at all)  |
-| -v  | to validate what SPs in DB that diffent from SPs in packed file  |
+| -i <mode> | to install SP; <mode> = {all, new, replace} |
+| -v  | to validate what SPs in DB that diffent from SPs in packed file |
+| -con | interactive console mode |
