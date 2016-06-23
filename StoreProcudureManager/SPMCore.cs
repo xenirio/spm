@@ -65,6 +65,35 @@ namespace StoreProcudureManager
             }
         }
 
+        public static List<string> GetSPListInPackFile(string filename)
+        {
+            List<string> lst = new List<string>();
+
+            // Prepare Dict
+            using(FileStream spmFile = new FileStream(filename, FileMode.Open)){
+                using (var archive = new ZipArchive(spmFile))
+                {
+                    var entry = archive.GetEntry("checksum.txt");
+                    if (entry == null)
+                    {
+                        return null;
+                    }
+
+                    using (StreamReader sr = new StreamReader(entry.Open()))
+                    {
+                        string line;
+                        while((line = sr.ReadLine()) != null)
+                        {
+                            string[] token = line.Split(new string[] { ":" }, StringSplitOptions.None);
+                            lst.Add(token[0]);
+                        }
+                    }
+                }
+            }
+
+            return lst;
+        }
+
         public static List<ValidateResultModel> ValidateStoreProcedures(string connection_string, string filename, out string error_string)
         {
             Dictionary<string, string> checksum_dict = new Dictionary<string, string>();
@@ -149,7 +178,7 @@ namespace StoreProcudureManager
             return results;
         }
 
-        public static void InstallStoreProcedures(string connection_string, string filename, bool is_replace, out string error_string)
+        public static void InstallStoreProcedures(string connection_string, string filename, InstallMode mode, out string error_string)
         {
             var result_list = ValidateStoreProcedures(connection_string, filename, out error_string);
 
@@ -168,12 +197,13 @@ namespace StoreProcudureManager
                         {
                             if (result.ResultType != RESULT_TYPE.MATCHED && result.ResultType != RESULT_TYPE.NOT_FOUND)
                             {
-                                if (result.ResultType == RESULT_TYPE.NEW || is_replace)
+                                if ((result.ResultType == RESULT_TYPE.NEW && mode != InstallMode.Replace) ||
+                                    (result.ResultType == RESULT_TYPE.DIFFERENT && mode != InstallMode.New))
                                 {
                                     var entry = archive.GetEntry(string.Format("{0}.sql", result.ProcedureName));
                                     if (entry != null)
                                     {
-                                        using(StreamReader sr = new StreamReader(entry.Open()))
+                                        using (StreamReader sr = new StreamReader(entry.Open()))
                                         {
                                             string sql = sr.ReadToEnd();
                                             if (result.ResultType != RESULT_TYPE.NEW)
@@ -185,7 +215,7 @@ namespace StoreProcudureManager
                                             {
                                                 var cmd = new SqlCommand(sql, conn);
                                                 cmd.ExecuteNonQuery();
-                                                
+
                                                 Console.WriteLine("Installed: {0}", result.ProcedureName);
                                             }
                                             catch (Exception e)
@@ -193,13 +223,56 @@ namespace StoreProcudureManager
                                                 Console.WriteLine("Failed: {0}", result.ProcedureName);
                                                 Console.WriteLine(e.Message);
                                             }
-                                        }  
+                                        }
                                     }
                                 }
                             }
                             else
                                 Console.WriteLine("Skip: {0}", result.ProcedureName);
                         }
+                        conn.Close();
+                    }
+
+                }
+            }
+        }
+
+        public static void InstallOneStoreProcedure(string connection_string, string filename, string store_procedure_name, RESULT_TYPE resultType)
+        {
+            using (FileStream spmFile = new FileStream(filename, FileMode.Open))
+            {
+                using (ZipArchive archive = new ZipArchive(spmFile))
+                {
+                    using (var conn = new SqlConnection(connection_string))
+                    {
+                        conn.Open();
+
+                        var entry = archive.GetEntry(string.Format("{0}.sql", store_procedure_name));
+                        if (entry != null)
+                        {
+                            using (StreamReader sr = new StreamReader(entry.Open()))
+                            {
+                                string sql = sr.ReadToEnd();
+                                if (resultType != RESULT_TYPE.NEW)
+                                {
+                                    sql = Regex.Replace(sql, "CREATE PROCEDURE", "ALTER PROCEDURE", RegexOptions.IgnoreCase);
+                                }
+
+                                try
+                                {
+                                    var cmd = new SqlCommand(sql, conn);
+                                    cmd.ExecuteNonQuery();
+
+                                    Console.WriteLine("Installed", store_procedure_name);
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("Failed to Install", store_procedure_name);
+                                    Console.WriteLine(e.Message);
+                                }
+                            }
+                        }
+
                         conn.Close();
                     }
 

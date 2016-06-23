@@ -11,9 +11,10 @@ namespace StoreProcudureManager
     {
         static void Main(string[] args)
         {
-            if (args.Length != 3)
+            if (args.Length == 1)
             {
                 showUsage();
+                return;
             }
 
             var conf = ConfigurationManager.ConnectionStrings["DefaultConnection"];
@@ -29,31 +30,43 @@ namespace StoreProcudureManager
                         SPMCore.SaveAllStoreProcudures(connection_string, args[2]);
                         break;
                     case "i":
-                        SPMCore.InstallStoreProcedures(connection_string, args[2], true, out error);
-                        if (error != "")
-                            Console.WriteLine(error);
-
-                        break;
-                    case "si":
-                        SPMCore.InstallStoreProcedures(connection_string, args[2], false, out error);
+                        if (args[2] == "all")
+                        {
+                            SPMCore.InstallStoreProcedures(connection_string, args[3], InstallMode.All, out error);
+                        }
+                        else if (args[2] == "new")
+                        {
+                            SPMCore.InstallStoreProcedures(connection_string, args[3], InstallMode.New, out error);
+                        }
+                        else if (args[2] == "replace")
+                        {
+                            SPMCore.InstallStoreProcedures(connection_string, args[3], InstallMode.Replace, out error);
+                        }
+                        else
+                        {
+                            Console.WriteLine("-i command expected mode in (all, new, replace)");
+                            break;
+                        }
                         if (error != "")
                             Console.WriteLine(error);
                         break;
                     case "v":
-                        var results = SPMCore.ValidateStoreProcedures(connection_string, args[2], out error);
+                        var results = SPMCore.ValidateStoreProcedures(connection_string, args[3], out error);
                         if (error == "")
                         {
-                            foreach (var result in results)
-                            {
-                                Console.Write("{0} : ", result.ProcedureName);
-                                writeColor(result.ResultText + "\n", result.ConsoleForegroundColor);
-                            }
+                            Helper.ShowValidateResult(results);
                         }
                         else
+                        {
                             Console.WriteLine(error);
+                        }
+                        break;
+                    case "con":
+                        var con = new SPMConsole(connection_string, args[2]);
+                        con.Start();
                         break;
                     default:
-                        Console.WriteLine("Invalid mode use -p, -i, -si, -v or just type \"spm\" to see the usage guide");
+                        Console.WriteLine("Invalid mode use -p, -i, -v or just type \"spm\" to see the usage guide");
                         return;
                 }
             }
@@ -66,7 +79,7 @@ namespace StoreProcudureManager
         static void showUsage()
         {
             Console.WriteLine("Use:");
-            Console.WriteLine("   spm <DBName> <-p|-i|-v> <packed file>");
+            Console.WriteLine("   spm <DBName> <-p|-i <mode>|-v> <packed file>");
             Console.WriteLine("");
             Console.WriteLine("Example:");
             Console.WriteLine("   spm MyDB -p webdb.zip");
@@ -75,20 +88,9 @@ namespace StoreProcudureManager
             Console.WriteLine("");
             Console.WriteLine("<DBName>         name of Database");
             Console.WriteLine("-p               to packed all SPs");
-            Console.WriteLine("-i               to install all SPs (replace if exist)");
-            Console.WriteLine("-si              to safety install (won't replace at all)");
+            Console.WriteLine("-i <mode>        to install (with mode = all|new|replace)");
             Console.WriteLine("-v               to validate what SPs in DB that diffent from SPs in packed file");
-        }
-
-        private static void writeColor(string msg, ConsoleColor foreground_color, ConsoleColor background_color = ConsoleColor.Black, bool newline = false)
-        {
-            Console.ForegroundColor = foreground_color;
-            Console.BackgroundColor = background_color;
-            if (newline)
-                Console.WriteLine(msg);
-            else
-                Console.Write(msg);
-            Console.ResetColor();
+            Console.WriteLine("-con             interactive console mode");
         }
     }
 }
