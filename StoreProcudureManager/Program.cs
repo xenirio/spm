@@ -11,7 +11,7 @@ namespace StoreProcudureManager
     {
         static void Main(string[] args)
         {
-            if (args.Length == 1)
+            if (args.Length < 0)
             {
                 showUsage();
                 return;
@@ -51,7 +51,7 @@ namespace StoreProcudureManager
                             Console.WriteLine(error);
                         break;
                     case "v":
-                        var results = SPMCore.ValidateStoreProcedures(connection_string, args[3], out error);
+                        var results = SPMCore.ValidateStoreProcedures(connection_string, args[2], out error);
                         if (error == "")
                         {
                             Helper.ShowValidateResult(results);
