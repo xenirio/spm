@@ -142,6 +142,9 @@ namespace StoreProcudureManager
                     {
                         while (reader.Read())
                         {
+                            if (reader["sp_name"].ToString().StartsWith("sp_"))
+                                continue;
+
                             SHA256 sha256 = SHA256Managed.Create();
                             byte[] hashValue = sha256.ComputeHash(Encoding.UTF8.GetBytes(reader["definition"].ToString()));
                             string hashString = BitConverter.ToString(hashValue).ToLower().Replace("-", "");
