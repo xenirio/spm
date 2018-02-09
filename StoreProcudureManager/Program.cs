@@ -11,7 +11,7 @@ namespace StoreProcudureManager
     {
         static void Main(string[] args)
         {
-            if (args.Length < 0)
+            if (args.Length <= 0)
             {
                 showUsage();
                 return;
