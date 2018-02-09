@@ -35,6 +35,9 @@ namespace StoreProcudureManager
                                 ZipArchiveEntry entry;
                                 while (reader.Read())
                                 {
+                                    if (reader["sp_name"].ToString().StartsWith("sp_"))
+                                        continue;
+
                                     entry = archive.CreateEntry(string.Format("{0}.sql", reader["sp_name"].ToString()));
                                     using (StreamWriter sw = new StreamWriter(entry.Open()))
                                     {
