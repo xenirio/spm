@@ -2,3 +2,4 @@ StoreProcudureManager/bin/*
 StoreProcudureManager/obj/*
 StoreProcudureManager.v11.suo
 *.user
+.vs/StoreProcudureManager/v15/Server/sqlite3
